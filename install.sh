@@ -36,3 +36,38 @@ sudo ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/lib/dock
 # Verify installation (optional)
 echo "Docker Compose installation complete."
 docker compose ps
+
+# Install nvidia-detect and linux headers
+sudo apt install -y nvidia-detect linux-headers-$(uname -r)
+
+# Detect the recommended NVIDIA driver
+recommended_driver=$(nvidia-detect -q)
+
+# Add Debian Sid repository for latest NVIDIA drivers
+sudo sh -c 'echo "deb http://deb.debian.org/debian/ sid main contrib non-free non-free-firmware" >> /etc/apt/sources.list'
+
+# Update package lists again after adding the new repository
+sudo apt-get update
+
+# Install NVIDIA driver and firmware
+sudo apt install -y nvidia-driver firmware-misc-nonfree
+
+# Install nvidia-kernel-dkms
+sudo apt install -y nvidia-kernel-dkms
+
+# Install NVIDIA Container Toolkit
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list" > /etc/apt/sources.list.d/nvidia-container-toolkit.list'
+sudo apt-get update
+sudo apt install -y nvidia-container-toolkit
+
+# Restart Docker to apply NVIDIA Container Toolkit changes
+sudo systemctl restart docker
+
+# Verify NVIDIA driver and Container Toolkit installations
+echo "NVIDIA Driver and Container Toolkit Verification:"
+nvidia-smi
+docker info | grep Runtime
+
+#Reboot to load the nvidia drivers correctly.
+sudo reboot

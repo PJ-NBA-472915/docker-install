@@ -30,6 +30,10 @@ sudo mv "$DOCKER_CONFIG/cli-plugins/docker-compose" /usr/local/lib/docker/cli-pl
 # Make the docker compose binary executable in the plugins directory
 sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
+# Add user to the docker group so that you can run docker without sudo
+sudo usermod -aG docker $USER
+sudo chown $USER:docker /var/run/docker.sock 
+
 # Create a symbolic link (not necessary after moving, but kept for completeness)
 sudo ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
 

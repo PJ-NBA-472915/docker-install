@@ -65,10 +65,10 @@ if [[ "$install_nvidia" == "y" ]]; then
     sudo apt install -y nvidia-kernel-dkms
 
     # Install NVIDIA Container Toolkit
-    wget -qO - https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-    sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list" > /etc/apt/sources.list.d/nvidia-container-toolkit.list'
-    sudo apt-get update
-    sudo apt install -y nvidia-container-toolkit
+    wget -qO - https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg && \
+    wget -qO - https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+      sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+      sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
     # Restart Docker to apply NVIDIA Container Toolkit changes
     sudo systemctl restart docker

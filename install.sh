@@ -16,7 +16,7 @@ DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
 mkdir -p "$DOCKER_CONFIG/cli-plugins"
 
 # Download Docker Compose
-curl -SL https://github.com/docker/compose/releases/download/v2.33.1/docker-compose-linux-x86_64 -o "$DOCKER_CONFIG/cli-plugins/docker-compose"
+wget -qO "$DOCKER_CONFIG/cli-plugins/docker-compose" https://github.com/docker/compose/releases/download/v2.33.1/docker-compose-linux-x86_64
 
 # Make Docker Compose executable
 chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
@@ -37,37 +37,50 @@ sudo ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/lib/dock
 echo "Docker Compose installation complete."
 docker compose ps
 
-# Install nvidia-detect and linux headers
-sudo apt install -y nvidia-detect linux-headers-$(uname -r)
+# Ask user if they want to install NVIDIA drivers
+read -p "Do you want to install NVIDIA drivers? (y/n): " install_nvidia
 
-# Detect the recommended NVIDIA driver
-recommended_driver=$(nvidia-detect -q)
+if [[ "$install_nvidia" == "y" ]]; then
 
-# Add Debian Sid repository for latest NVIDIA drivers
-sudo sh -c 'echo "deb http://deb.debian.org/debian/ sid main contrib non-free non-free-firmware" >> /etc/apt/sources.list'
+    # Install nvidia-detect and linux headers
+    sudo apt install -y nvidia-detect linux-headers-$(uname -r)
 
-# Update package lists again after adding the new repository
-sudo apt-get update
+    # Detect the recommended NVIDIA driver
+    recommended_driver=$(nvidia-detect -q)
 
-# Install NVIDIA driver and firmware
-sudo apt install -y nvidia-driver firmware-misc-nonfree
+    # Add Debian Sid repository for latest NVIDIA drivers
+    sudo sh -c 'echo "deb http://deb.debian.org/debian/ sid main contrib non-free non-free-firmware" >> /etc/apt/sources.list'
 
-# Install nvidia-kernel-dkms
-sudo apt install -y nvidia-kernel-dkms
+    # Update package lists again after adding the new repository
+    sudo apt-get update
 
-# Install NVIDIA Container Toolkit
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list" > /etc/apt/sources.list.d/nvidia-container-toolkit.list'
-sudo apt-get update
-sudo apt install -y nvidia-container-toolkit
+    # Install NVIDIA driver and firmware
+    sudo apt install -y nvidia-driver firmware-misc-nonfree
 
-# Restart Docker to apply NVIDIA Container Toolkit changes
-sudo systemctl restart docker
+    # Install nvidia-kernel-dkms
+    sudo apt install -y nvidia-kernel-dkms
 
-# Verify NVIDIA driver and Container Toolkit installations
-echo "NVIDIA Driver and Container Toolkit Verification:"
-nvidia-smi
-docker info | grep Runtime
+    # Install NVIDIA Container Toolkit
+    wget -qO - https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+    sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list" > /etc/apt/sources.list.d/nvidia-container-toolkit.list'
+    sudo apt-get update
+    sudo apt install -y nvidia-container-toolkit
 
-#Reboot to load the nvidia drivers correctly.
-sudo reboot
+    # Restart Docker to apply NVIDIA Container Toolkit changes
+    sudo systemctl restart docker
+
+    # Verify NVIDIA driver and Container Toolkit installations
+    echo "NVIDIA Driver and Container Toolkit Verification:"
+    nvidia-smi
+    docker info | grep Runtime
+
+fi
+
+# Ask user if they want to reboot
+read -p "Do you want to reboot now to load the NVIDIA drivers? (y/n): " reboot_now
+
+if [[ "$reboot_now" == "y" ]]; then
+    sudo reboot
+fi
+
+echo "Script execution complete."
